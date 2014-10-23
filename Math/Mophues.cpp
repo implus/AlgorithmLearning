@@ -24,7 +24,13 @@ for each i == k * d, we precalculate sum of u(i / k), k meets some conditions
 solve sigma^3 gcd(a, b, c) == 1
 
 ans = 3 + solvetriple(a, b, c) + solvedouble(a, b) + solvedouble(a, c) + solvedouble(b, c)
-3 means (0, 0, 1), (0, 1, 0) (1, 0, 0)
+	  3 means (0, 0, 1), (0, 1, 0) (1, 0, 0)
+
+3.	http://acm.hust.edu.cn/vjudge/problem/viewproblem.action?id=10581
+
+4.	http://acm.seu.edu.cn/oj/problem.php?id=123
+find xishu needs a multi-function calculate, very good problem
+when induce, you should be very careful, for example i = k*i', do not ignore k in every place.
 
 */
 
@@ -237,6 +243,7 @@ int main(){
 
 
 //3.	http://acm.hust.edu.cn/vjudge/problem/viewproblem.action?id=10581
+/*
 #include <stdio.h>
 #include <string.h>
 #include <algorithm>
@@ -294,6 +301,94 @@ int main() {
 	while(t--){
 		scanf("%d%d", &a, &b);
 		printf("%lld\n", gao(a, b));
+	}
+	return 0;
+}
+*/
+
+//4.	http://acm.seu.edu.cn/oj/problem.php?id=123
+#include <stdio.h>
+#include <string.h>
+#include <algorithm>
+#include <iostream>
+#include <stdlib.h>
+#include <assert.h>
+#include <vector>
+#include <string>
+#include <set>
+#include <map>
+using namespace std;
+typedef unsigned int lint;
+
+const int MAX_N = 1e7 + 20;
+int prime[MAX_N], tot;
+bool notp[MAX_N];
+lint dp[MAX_N], f[MAX_N];
+
+inline lint po(lint p, int v){
+	lint ans = 1;
+	while(v){
+		if(v & 1) ans = ans * p;
+		p = p * p;
+		v >>= 1;
+	}
+	return ans;
+}
+
+void init(){
+	tot = 0; f[1] = 1;
+	for(int i = 2; i < MAX_N; i++){
+		if(!notp[i]){
+			prime[tot++] = i;
+			f[i] = i - 1;
+		}
+		for(int j = 0; j < tot; j++){
+			int t = i * prime[j];
+			if(t >= MAX_N) break;
+			notp[t] = 1;
+			if( i % prime[j] == 0 ){
+				f[t] = f[i] * prime[j];
+				break;
+			}else
+				f[t] = f[i] * (prime[j] - 1);
+		}
+	}
+}
+
+void initdp(int v, int nm){
+	for(int i = 0; i < nm; i++){
+		dp[i] = f[i] * po(i, v);
+	}
+	for(int i = 1; i < nm; i++){
+		dp[i] += dp[i - 1];
+	}
+}
+
+lint gao(int n, int m, int a, int b){
+	lint ans = 0, da = 0, db = 0;
+	for(int i = 1; i <= n; i++) da += po(i, a);
+	for(int i = 1; i <= m; i++) db += po(i, b);
+	lint pa = n, pb = m;
+	for(int i = 1, j = 1; i <= n; i = j + 1){
+		j = min(n / (n/i), m / (m/i));
+		while(pa > n/i) da -= po(pa, a), pa--;
+		while(pb > m/i) db -= po(pb, b), pb--;
+		ans += (dp[j] - dp[i - 1]) * da * db;
+	}
+	return ans;
+}
+
+int main() {
+	init();
+	int t, a, b, n, m, icase = 1;
+	scanf("%d", &t);
+	while(t--){
+		scanf("%d%d%d%d", &n, &m, &a, &b);
+		// remember swap n,m a,b the same time
+		if(n > m) swap(n, m), swap(a, b);
+
+		initdp(a + b - 2, max(n,m) + 2);
+		printf("Case #%d: %u\n",icase++, gao(n, m, a - 1, b - 1));
 	}
 	return 0;
 }
