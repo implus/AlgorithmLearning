@@ -301,3 +301,153 @@ int main() {
 	return 0;
 }
 
+
+// std type SA
+/*
+solve http://codeforces.com/problemset/problem/452/E
+for each l, count 3 string's triples(i1, i2, i3) that sk[ik, ..., ik + l - 1] same.
+*/
+#include <stdio.h>
+#include <string.h>
+#include <algorithm>
+#include <iostream>
+#include <stdlib.h>
+#include <assert.h>
+#include <vector>
+#include <string>
+#include <set>
+#include <map>
+using namespace std;
+typedef long long lint;
+
+const int MAX_N = 3e5 + 10;
+const int M = 1e9 + 7;
+lint po[MAX_N], ha[MAX_N];
+int s[MAX_N];
+char ch[3][MAX_N];
+
+int sl[3]; // add sum len of each string
+inline int who(int a){
+	for(int i = 0; i < 3; i++){
+		if(a <= sl[i]) return i;
+	}
+	cerr<<"Error"<<endl;
+}
+inline int len(int a){
+	return sl[who(a)];
+}
+
+
+int sa[MAX_N], h[MAX_N], rk[MAX_N];
+vector<int> zu[MAX_N];
+int pa[MAX_N];
+int has[MAX_N][3];
+lint dp[MAX_N];
+
+int get_pa(int x){
+	return pa[x] == x ? x: pa[x] = get_pa(pa[x]);
+}
+////////////////////////// SA Begin ////////////////////////////////
+int tmp[3][MAX_N];
+bool cmp(int * y, int a, int b, int l){
+	return y[a] == y[b] && y[a + l] == y[b + l];
+}
+void gao_sa(int * s, int n, int m){
+	int * x = tmp[0], * y = tmp[1], * c = tmp[2];
+	fill(c, c + m, 0);
+	for(int i = 0; i < n; i++) c[x[i] = s[i]]++;
+	for(int i = 1; i < m; i++) c[i] += c[i - 1];
+	for(int i = n - 1; i >= 0; i--) sa[--c[x[i]]] = i;
+
+	for(int j = 1, p = 1; p < n; j <<= 1, m = p){
+		p = 0;
+		for(int i = n - j; i < n; i++) y[p++] = i;
+		for(int i = 0; i < n; i++) if(sa[i] >= j) y[p++] = sa[i] - j;
+		fill(c, c + m, 0);
+		for(int i = 0; i < n; i++) c[x[y[i]]]++;
+		for(int i = 1; i < m; i++) c[i] += c[i - 1];
+		for(int i = n - 1; i >= 0; i--) sa[--c[x[y[i]]]] = y[i];
+		swap(x, y), x[sa[0]] = 0, p = 1;
+		for(int i = 1; i < n; i++){
+			x[sa[i]] = cmp(y, sa[i], sa[i - 1], j) ? p - 1:p++;
+		}
+	}
+}
+
+void gao_h(int * s, int n){
+	int i, j, k = 0;
+	for(i = 1; i < n; i++) rk[sa[i]] = i;
+	for(i = 0; i < n - 1; h[rk[i++]] = k)
+		for(k ? k--: 0, j = sa[rk[i] - 1]; s[i + k] == s[j + k]; k++);
+
+}
+////////////////////////// SA End ////////////////////////////////
+/* use
+	1. init s, s[n] = '\0'
+	2. gao_sa(s, n + 1, maxm); gao_h(s, n + 1);
+*/
+
+void gao(int * s, int n, int minLen){ // by s
+	gao_sa(s, n, 128);
+	gao_h(s, n);
+
+	for(int i = 0; i < n; i++) zu[i].clear();
+	for(int i = 1; i < n; i++){
+		//h[i] = equal_len(sa[i - 1], sa[i]);
+		zu[h[i]].push_back(i);
+	}
+	
+	for(int i = 0; i < n; i++){
+		pa[i] = i;
+		for(int j = 0; j < 3; j++) has[i][j] = 0;
+		has[i][who(i)]++;
+	}
+	
+	fill(dp, dp + n, 0);
+	dp[n] = 0;
+	for(int i = n - 1; i > 0; i--){
+		dp[i] = dp[i + 1];
+		for(int j = 0; j < zu[i].size(); j++){
+			int p = zu[i][j], q = p - 1;
+			int fp = get_pa(sa[p]), fq = get_pa(sa[q]);
+			dp[i] += M - 1LL * has[fp][0] * has[fp][1] * has[fp][2] % M;
+			dp[i] %= M;
+			dp[i] += M - 1LL * has[fq][0] * has[fq][1] * has[fq][2] % M;
+			dp[i] %= M;
+			pa[fq] = fp;
+			for(int k = 0; k < 3; k++)
+				has[fp][k] += has[fq][k];
+			dp[i] += 1LL * has[fp][0] * has[fp][1] % M * has[fp][2] % M;
+			dp[i] %= M;
+		}
+	}
+	for(int i = 1; i <= minLen; i++){
+		printf("%d ", dp[i]);
+	}
+}
+
+int main() {
+	int l[3];
+	for(int i = 0; i < 3; i++){
+		scanf("%s", ch[i]);
+		l[i] = strlen(ch[i]);
+	}
+
+	sl[0] = l[0];
+	for(int i = 1; i < 3; i++) sl[i] = sl[i - 1] + l[i] + 1;
+
+	
+	int p = 0;
+	for(int i = 0; i < l[0]; i++) s[p++] = ch[0][i];
+	s[p++] = '#';
+	for(int i = 0; i < l[1]; i++) s[p++] = ch[1][i];
+	s[p++] = '$';
+	for(int i = 0; i < l[2]; i++) s[p++] = ch[2][i];
+	s[p++] = '\0';
+
+	gao(s, p, min(min(l[0], l[1]), l[2]));
+
+	return 0;
+}
+
+
