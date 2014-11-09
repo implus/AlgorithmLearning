@@ -321,7 +321,9 @@ using namespace std;
 typedef unsigned int lint;
 
 const int MAX_N = 1e7 + 20;
-int prime[MAX_N], tot;
+//int prime[MAX_N], tot;
+int tot = 0;
+vector<int> prime;
 bool notp[MAX_N];
 lint dp[MAX_N], f[MAX_N];
 
@@ -336,10 +338,11 @@ inline lint po(lint p, int v){
 }
 
 void init(){
-	tot = 0; f[1] = 1;
+	tot = 0; f[1] = 1; prime.clear();
 	for(int i = 2; i < MAX_N; i++){
 		if(!notp[i]){
-			prime[tot++] = i;
+			//prime[tot++] = i;
+			prime.push_back(i), ++tot;
 			f[i] = i - 1;
 		}
 		for(int j = 0; j < tot; j++){
